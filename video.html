@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Watch Videos and Earn</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+        }
+        header {
+            background-color: #6200ea;
+            color: #fff;
+            padding: 15px;
+            text-align: center;
+        }
+        nav {
+            background-color: #ddd;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        nav a {
+            padding: 10px 15px;
+            background-color: #6200ea;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        nav a:hover {
+            background-color: #5b00d1;
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .video-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        video {
+            width: 100%;
+            max-width: 720px;
+            border-radius: 10px;
+        }
+        .earnings {
+            text-align: center;
+            font-size: 1.2em;
+            margin: 20px 0;
+        }
+        .progress-bar {
+            width: 100%;
+            background-color: #ddd;
+            height: 10px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .progress-bar-inner {
+            height: 100%;
+            width: 0;
+            background-color: #6200ea;
+            border-radius: 5px;
+        }
+        .button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background-color: #6200ea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 1.1em;
+        }
+        .button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .button:hover:not(:disabled) {
+            background-color: #5b00d1;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Watch Videos and Earn</h1>
+    </header>
+    <nav>
+        <a href="index.html">Home</a>
+        <a href="withdrawal.html">Withdraw Earnings</a>
+    </nav>
+    <div class="container">
+        <div class="video-container">
+            <video id="video-player" controls>
+                <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
+        <div class="earnings">
+            <p>Your earnings from this video:</p>
+            <p><span id="earnings">5000</span></p>
+            <p>Your total earnings: <span id="total-earnings">5000</span></p>
+        </div>
+        <div class="progress-bar">
+            <div id="progress" class="progress-bar-inner"></div>
+        </div>
+        <button class="button" id="mark-complete" disabled>Mark as Complete</button>
+    </div>
+    <script>
+        const video = document.getElementById('video-player');
+        const earnings = document.getElementById('earnings');
+        const progressBar = document.getElementById('progress');
+        const completeButton = document.getElementById('mark-complete');
+        const earningsPerVideo = 500; // Example earnings per video
+
+        // Fetch total earnings
+        async function fetchTotalEarnings() {
+            try {
+                const response = await fetch('http://127.0.0.1:5000/earnings');
+                const data = await response.json();
+
+                if (response.ok) {
+                    document.getElementById('total-earnings').innerText = `$${data.total.toFixed(2)}`;
+                } else {
+                    alert(`Error: ${data.error}`);
+                }
+            } catch (error) {
+                console.error('Error fetching earnings:', error);
+            }
+        }
+
+        video.ontimeupdate = () => {
+            const progress = (video.currentTime / video.duration) * 100;
+            progressBar.style.width = `${progress}%`;
+
+            if (video.ended) {
+                completeButton.disabled = false;
+            }
+        };
+
+        completeButton.onclick = async () => {
+            if (!video.ended) {
+                alert('Please finish watching the video to earn.');
+                return;
+            }
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/video-watched', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ videoId: 1 }),
+                });
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert(`Video completed! You earned $${earningsPerVideo}`);
+                    await fetchTotalEarnings();
+                    completeButton.disabled = true;
+                } else {
+                    alert(`Error: ${result.error}`);
+                }
+            } catch (error) {
+                console.error('Error marking video complete:', error);
+                alert('Failed to mark video as complete.');
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', fetchTotalEarnings);
+    </script>
+</body>
+</html>
